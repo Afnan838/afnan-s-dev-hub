@@ -120,13 +120,15 @@ const VoiceRecipe = () => {
       if (data?.error) throw new Error(data.error);
 
       const structured = data.recipe;
-      setRecipe({
+      const fullRecipe = {
         ...structured,
         id: crypto.randomUUID(),
         createdAt: new Date().toISOString(),
-      });
+      };
+      setRecipe(fullRecipe);
       setShowConfirm(true);
       toast.success("Recipe structured by AI!");
+      speakRecipe(fullRecipe);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to process recipe with AI");
