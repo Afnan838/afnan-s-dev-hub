@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import type { RecipeData } from "@/lib/api";
 
-const ORANGE = [234, 120, 30] as const;
+const ORANGE = [200, 40, 40] as const;
 const DARK = [30, 30, 30] as const;
 const GRAY = [100, 100, 100] as const;
 const LIGHT_GRAY = [150, 150, 150] as const;
