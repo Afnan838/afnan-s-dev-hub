@@ -1,9 +1,4 @@
-import recipeCard1 from "@/assets/recipe-card-1.jpg";
-import recipeCard2 from "@/assets/recipe-card-2.jpg";
-import recipeCard3 from "@/assets/recipe-card-3.jpg";
-import recipeSamosa from "@/assets/recipe-samosa.jpg";
-import recipeDal from "@/assets/recipe-dal.jpg";
-import recipeTandoori from "@/assets/recipe-tandoori.jpg";
+// Accurate food images from Unsplash for each dish
 
 export interface RecipeData {
   id: string;
