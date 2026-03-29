@@ -209,7 +209,7 @@ export async function exportRecipeBookPdf(recipes: RecipeData[], options?: { add
     doc.setFontSize(36);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BRAND);
-    doc.text("Native Indian", pageWidth / 2, 70, { align: "center" });
+    doc.text("Indian", pageWidth / 2, 70, { align: "center" });
     doc.text("Recipe Book", pageWidth / 2, 85, { align: "center" });
 
     doc.setFontSize(14);
