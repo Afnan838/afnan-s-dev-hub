@@ -9,7 +9,7 @@ import { getLocalRecipes } from "@/lib/api";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin", label: "Admin Panel", icon: Shield, adminOnly: true },
+  { to: "/admin", label: "Admin Panel", icon: Shield },
   { to: "/create", label: "Create Recipe", icon: Plus },
   { to: "/recipes", label: "My Recipes", icon: BookOpen },
   { to: "/voice-recipe", label: "Voice Recipe", icon: Mic },
@@ -57,8 +57,7 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
 
         {/* Nav */}
         <nav className="flex-1 space-y-1 px-3 pt-2">
-          {navItems.map(({ to, label, icon: Icon, adminOnly }) => {
-            if (adminOnly && !isAdmin()) return null;
+          {navItems.map(({ to, label, icon: Icon }) => {
             const isActive = location.pathname === to || (to === "/dashboard" && location.pathname === "/");
             return (
               <Link
