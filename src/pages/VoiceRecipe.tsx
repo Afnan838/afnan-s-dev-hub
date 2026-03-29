@@ -286,7 +286,18 @@ const VoiceRecipe = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="section-card space-y-5"
                   >
-                    <h2 className="font-display text-xl font-bold">{recipe.title}</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-display text-xl font-bold">{recipe.title}</h2>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-9 w-9 ${isSpeaking ? "text-primary animate-pulse" : "text-muted-foreground hover:text-primary"}`}
+                        onClick={() => isSpeaking ? stopSpeaking() : speakRecipe(recipe)}
+                        title={isSpeaking ? "Stop speaking" : "Read recipe aloud"}
+                      >
+                        {isSpeaking ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                      </Button>
+                    </div>
                     {recipe.description && (
                       <p className="text-sm text-muted-foreground">{recipe.description}</p>
                     )}
