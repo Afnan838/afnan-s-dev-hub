@@ -49,6 +49,11 @@ const AdminPanel = () => {
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeData | null>(null);
   const adminAccess = user && isAdmin();
 
+  const filtered = useMemo(() =>
+    recipes.filter((r) => r.title.toLowerCase().includes(search.toLowerCase())),
+    [recipes, search]
+  );
+
   if (!adminAccess) {
     return (
       <SidebarLayout>
@@ -61,11 +66,6 @@ const AdminPanel = () => {
       </SidebarLayout>
     );
   }
-
-  const filtered = useMemo(() =>
-    recipes.filter((r) => r.title.toLowerCase().includes(search.toLowerCase())),
-    [recipes, search]
-  );
 
   const handleDelete = (id: string) => {
     deleteLocalRecipe(id);
