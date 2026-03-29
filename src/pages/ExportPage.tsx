@@ -28,7 +28,7 @@ const ExportPage = () => {
   const handleExport = useCallback(() => {
     if (selectedIds.size === 0) { toast.error("Select at least one recipe"); return; }
     const selected = recipes.filter((r) => selectedIds.has(r.id));
-    exportRecipeBookPdf(selected, { addCover });
+    await exportRecipeBookPdf(selected, { addCover });
     toast.success(`Exported ${selected.length} recipes as PDF!`);
   }, [selectedIds, recipes, addCover]);
 
