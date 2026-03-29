@@ -9,7 +9,7 @@ import { getLocalRecipes } from "@/lib/api";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin", label: "Admin Panel", icon: Shield, adminOnly: true },
+  { to: "/admin", label: "Admin Panel", icon: Shield },
   { to: "/create", label: "Create Recipe", icon: Plus },
   { to: "/recipes", label: "My Recipes", icon: BookOpen },
   { to: "/voice-recipe", label: "Voice Recipe", icon: Mic },
