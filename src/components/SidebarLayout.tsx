@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Plus, BookOpen, Mic, Download, Search, Bell, User, ChefHat, LogOut, Shield,
+  LayoutDashboard, Plus, BookOpen, Mic, Download, Search, Bell, User, UtensilsCrossed, LogOut, Shield,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -48,10 +48,10 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center gap-3 px-5 py-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <ChefHat className="h-5 w-5 text-primary-foreground" />
+            <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <p className="font-display text-base font-bold text-foreground">Native Indian</p>
+            <p className="font-display text-base font-bold text-foreground">Indian</p>
             <p className="text-xs text-muted-foreground">Recipe Platform</p>
           </div>
         </Link>
@@ -128,7 +128,7 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
                           <img src={recipe.image} alt="" className="h-9 w-9 rounded-lg object-cover" />
                         ) : (
                           <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center">
-                            <ChefHat className="h-4 w-4 text-muted-foreground" />
+                            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
                           </div>
                         )}
                         <div className="min-w-0">

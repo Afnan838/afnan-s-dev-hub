@@ -54,7 +54,7 @@ export async function exportSingleRecipePdf(recipe: RecipeData) {
   const addFooter = () => {
     doc.setFontSize(7);
     doc.setTextColor(...LIGHT_GRAY);
-    doc.text("Native Indian Recipe AI — Detailed Report", margin, pageHeight - 10);
+    doc.text("Indian Recipe AI — Detailed Report", margin, pageHeight - 10);
     doc.text(new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" }), pageWidth - margin, pageHeight - 10, { align: "right" });
   };
 
@@ -195,7 +195,7 @@ export async function exportRecipeBookPdf(recipes: RecipeData[], options?: { add
   const addPageFooter = (pageNum?: number, total?: number) => {
     doc.setFontSize(7);
     doc.setTextColor(...LIGHT_GRAY);
-    doc.text("Native Indian Recipe AI — Recipe Book", margin, pageHeight - 10);
+    doc.text("Indian Recipe AI — Recipe Book", margin, pageHeight - 10);
     if (pageNum !== undefined && total !== undefined) {
       doc.text(`Page ${pageNum} of ${total}`, pageWidth - margin, pageHeight - 10, { align: "right" });
     }
@@ -209,7 +209,7 @@ export async function exportRecipeBookPdf(recipes: RecipeData[], options?: { add
     doc.setFontSize(36);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BRAND);
-    doc.text("Native Indian", pageWidth / 2, 70, { align: "center" });
+    doc.text("Indian", pageWidth / 2, 70, { align: "center" });
     doc.text("Recipe Book", pageWidth / 2, 85, { align: "center" });
 
     doc.setFontSize(14);

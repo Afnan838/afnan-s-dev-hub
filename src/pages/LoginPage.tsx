@@ -65,7 +65,7 @@ const LoginPage = () => {
             <ChefHat className="h-10 w-10 text-primary-foreground" />
           </div>
           <h1 className="font-display text-4xl font-bold mb-4">
-            Native Indian<br />
+            Indian<br />
             <span className="text-gradient-orange">Recipe AI</span>
           </h1>
           <p className="text-muted-foreground leading-relaxed">
