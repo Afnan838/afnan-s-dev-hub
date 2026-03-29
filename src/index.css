@@ -36,10 +36,10 @@
 
     --radius: 0.75rem;
 
-    --sidebar-bg: 0 0% 4%;
-    --sidebar-fg: 0 0% 70%;
+    --sidebar-bg: 220 22% 4%;
+    --sidebar-fg: 220 10% 70%;
     --sidebar-active: 0 80% 50%;
-    --sidebar-hover: 0 0% 10%;
+    --sidebar-hover: 220 18% 12%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
