@@ -11,6 +11,21 @@ import { REGIONS, saveLocalRecipe } from "@/lib/api";
 
 const CreateRecipe = () => {
   const navigate = useNavigate();
+  const user = getUser();
+  const adminAccess = user && isAdmin();
+
+  if (!adminAccess) {
+    return (
+      <SidebarLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <Shield className="h-16 w-16 text-destructive mb-4" />
+          <h2 className="text-2xl font-display font-bold mb-2">Admin Only</h2>
+          <p className="text-muted-foreground mb-4">Only admins can create recipes.</p>
+          <Button onClick={() => navigate("/dashboard")} className="glow-orange">Back to Dashboard</Button>
+        </div>
+      </SidebarLayout>
+    );
+  }
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [region, setRegion] = useState("");
