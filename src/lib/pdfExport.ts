@@ -54,7 +54,7 @@ export async function exportSingleRecipePdf(recipe: RecipeData) {
   const addFooter = () => {
     doc.setFontSize(7);
     doc.setTextColor(...LIGHT_GRAY);
-    doc.text("Native Indian Recipe AI — Detailed Report", margin, pageHeight - 10);
+    doc.text("Indian Recipe AI — Detailed Report", margin, pageHeight - 10);
     doc.text(new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" }), pageWidth - margin, pageHeight - 10, { align: "right" });
   };
 
