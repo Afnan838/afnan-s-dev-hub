@@ -1,11 +1,26 @@
 import jsPDF from "jspdf";
 import type { RecipeData } from "@/lib/api";
 
-const ORANGE = [200, 40, 40] as const;
+const BRAND = [200, 40, 40] as const;
 const DARK = [30, 30, 30] as const;
 const GRAY = [100, 100, 100] as const;
 const LIGHT_GRAY = [150, 150, 150] as const;
 const BODY = [60, 60, 60] as const;
+
+async function loadImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
 
 function drawDivider(doc: jsPDF, y: number, margin: number, pageWidth: number) {
   doc.setDrawColor(200, 200, 200);
@@ -17,15 +32,14 @@ function sectionTitle(doc: jsPDF, text: string, margin: number, y: number): numb
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...DARK);
   doc.text(text, margin, y);
-  // orange underline
-  doc.setDrawColor(...ORANGE);
+  doc.setDrawColor(...BRAND);
   doc.setLineWidth(0.8);
   doc.line(margin, y + 2, margin + doc.getTextWidth(text), y + 2);
   doc.setLineWidth(0.2);
   return y + 10;
 }
 
-export function exportSingleRecipePdf(recipe: RecipeData) {
+export async function exportSingleRecipePdf(recipe: RecipeData) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -44,8 +58,14 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
     doc.text(new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" }), pageWidth - margin, pageHeight - 10, { align: "right" });
   };
 
+  // Load image
+  let imgData: string | null = null;
+  if (recipe.image) {
+    imgData = await loadImageAsBase64(recipe.image);
+  }
+
   // Header bar
-  doc.setFillColor(...ORANGE);
+  doc.setFillColor(...BRAND);
   doc.rect(0, 0, pageWidth, 4, "F");
 
   y = 18;
@@ -53,7 +73,7 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
   // Title
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...ORANGE);
+  doc.setTextColor(...BRAND);
   doc.text(recipe.title, margin, y);
   y += 10;
 
@@ -62,14 +82,27 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...GRAY);
   const metaParts: string[] = [];
-  if (recipe.region) metaParts.push(`📍 Region: ${recipe.region}`);
-  if (recipe.time) metaParts.push(`⏱ Time: ${recipe.time}`);
-  if (recipe.servings) metaParts.push(`🍽 Servings: ${recipe.servings}`);
+  if (recipe.region) metaParts.push(`Region: ${recipe.region}`);
+  if (recipe.time) metaParts.push(`Time: ${recipe.time}`);
+  if (recipe.servings) metaParts.push(`Servings: ${recipe.servings}`);
   doc.text(metaParts.join("    |    "), margin, y);
   y += 8;
 
   drawDivider(doc, y, margin, pageWidth);
   y += 8;
+
+  // Recipe image
+  if (imgData) {
+    const imgWidth = contentWidth;
+    const imgHeight = 60;
+    checkPage(imgHeight + 8);
+    try {
+      doc.addImage(imgData, "JPEG", margin, y, imgWidth, imgHeight);
+      y += imgHeight + 8;
+    } catch {
+      // skip if image fails
+    }
+  }
 
   // Description
   if (recipe.description) {
@@ -84,15 +117,13 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
 
   // Ingredients
   y = sectionTitle(doc, "Ingredients", margin, y);
-
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...BODY);
   recipe.ingredients.forEach((ing, i) => {
     checkPage(8);
-    // Numbered bullet
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...ORANGE);
+    doc.setTextColor(...BRAND);
     doc.text(`${i + 1}.`, margin + 2, y);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY);
@@ -104,21 +135,18 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
   // Steps
   checkPage(15);
   y = sectionTitle(doc, "Step-by-Step Method", margin, y);
-
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...BODY);
   recipe.steps.forEach((step, i) => {
     const lines = doc.splitTextToSize(step, contentWidth - 16);
     checkPage(lines.length * 6 + 8);
-    // Step number circle
-    doc.setFillColor(...ORANGE);
+    doc.setFillColor(...BRAND);
     doc.circle(margin + 5, y - 2, 4, "F");
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
     doc.text(`${i + 1}`, margin + 5, y - 0.5, { align: "center" });
-    // Step text
     doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY);
@@ -126,7 +154,7 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
     y += lines.length * 6 + 6;
   });
 
-  // Nutritional / Traditional note
+  // Traditional note
   y += 6;
   checkPage(30);
   y = sectionTitle(doc, "Traditional Notes", margin, y);
@@ -138,22 +166,31 @@ export function exportSingleRecipePdf(recipe: RecipeData) {
   doc.text(noteLines, margin, y);
   y += noteLines.length * 5 + 6;
 
-  // Footer
   addFooter();
 
-  // Bottom bar
-  doc.setFillColor(...ORANGE);
+  doc.setFillColor(...BRAND);
   doc.rect(0, pageHeight - 4, pageWidth, 4, "F");
 
   doc.save(`${recipe.title.replace(/\s+/g, "_")}_Report.pdf`);
 }
 
-export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?: boolean }) {
+export async function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?: boolean }) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
   const contentWidth = pageWidth - margin * 2;
+
+  // Preload all images
+  const imageMap = new Map<string, string>();
+  await Promise.all(
+    recipes.map(async (r) => {
+      if (r.image) {
+        const data = await loadImageAsBase64(r.image);
+        if (data) imageMap.set(r.id, data);
+      }
+    })
+  );
 
   const addPageFooter = (pageNum?: number, total?: number) => {
     doc.setFontSize(7);
@@ -166,13 +203,12 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
 
   // Cover page
   if (options?.addCover) {
-    // Orange header bar
-    doc.setFillColor(...ORANGE);
+    doc.setFillColor(...BRAND);
     doc.rect(0, 0, pageWidth, 8, "F");
 
     doc.setFontSize(36);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...ORANGE);
+    doc.setTextColor(...BRAND);
     doc.text("Native Indian", pageWidth / 2, 70, { align: "center" });
     doc.text("Recipe Book", pageWidth / 2, 85, { align: "center" });
 
@@ -186,27 +222,25 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
     doc.text(`Generated on ${new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })}`, pageWidth / 2, 115, { align: "center" });
     doc.text("AI-Powered Recipe Platform", pageWidth / 2, 123, { align: "center" });
 
-    // Decorative line
-    doc.setDrawColor(...ORANGE);
+    doc.setDrawColor(...BRAND);
     doc.setLineWidth(1);
     doc.line(pageWidth / 2 - 40, 95, pageWidth / 2 + 40, 95);
     doc.setLineWidth(0.2);
 
-    // Bottom bar
-    doc.setFillColor(...ORANGE);
+    doc.setFillColor(...BRAND);
     doc.rect(0, pageHeight - 8, pageWidth, 8, "F");
 
     // Table of contents
     doc.addPage();
-    doc.setFillColor(...ORANGE);
+    doc.setFillColor(...BRAND);
     doc.rect(0, 0, pageWidth, 4, "F");
 
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...ORANGE);
+    doc.setTextColor(...BRAND);
     doc.text("Table of Contents", margin, 28);
 
-    doc.setDrawColor(...ORANGE);
+    doc.setDrawColor(...BRAND);
     doc.setLineWidth(0.8);
     doc.line(margin, 32, margin + 60, 32);
     doc.setLineWidth(0.2);
@@ -216,18 +250,17 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
     recipes.forEach((r, i) => {
       if (tocY > pageHeight - 30) { doc.addPage(); tocY = 28; }
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...ORANGE);
+      doc.setTextColor(...BRAND);
       doc.text(`${String(i + 1).padStart(2, "0")}`, margin, tocY);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...DARK);
       doc.text(r.title, margin + 12, tocY);
       doc.setTextColor(...LIGHT_GRAY);
       doc.text(r.region || "", pageWidth - margin, tocY, { align: "right" });
-      // Dotted line
-      doc.setDrawColor(200, 200, 200);
       const titleEnd = margin + 12 + doc.getTextWidth(r.title) + 4;
       const regionStart = pageWidth - margin - doc.getTextWidth(r.region || "") - 4;
       if (regionStart > titleEnd) {
+        doc.setDrawColor(200, 200, 200);
         doc.setLineDashPattern([1, 2], 0);
         doc.line(titleEnd, tocY, regionStart, tocY);
         doc.setLineDashPattern([], 0);
@@ -248,8 +281,7 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
       if (y + needed > pageHeight - 25) { doc.addPage(); y = 16; }
     };
 
-    // Top bar
-    doc.setFillColor(...ORANGE);
+    doc.setFillColor(...BRAND);
     doc.rect(0, 0, pageWidth, 4, "F");
 
     y = 18;
@@ -257,7 +289,7 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
     // Title
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...ORANGE);
+    doc.setTextColor(...BRAND);
     doc.text(recipe.title, margin, y);
     y += 9;
 
@@ -275,6 +307,20 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
     drawDivider(doc, y, margin, pageWidth);
     y += 7;
 
+    // Recipe image
+    const imgData = imageMap.get(recipe.id);
+    if (imgData) {
+      const imgWidth = contentWidth;
+      const imgHeight = 50;
+      checkPage(imgHeight + 6);
+      try {
+        doc.addImage(imgData, "JPEG", margin, y, imgWidth, imgHeight);
+        y += imgHeight + 6;
+      } catch {
+        // skip
+      }
+    }
+
     // Description
     if (recipe.description) {
       doc.setFontSize(10);
@@ -288,14 +334,13 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
 
     // Ingredients
     y = sectionTitle(doc, "Ingredients", margin, y);
-
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY);
     recipe.ingredients.forEach((ing, i) => {
       checkPage(7);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...ORANGE);
+      doc.setTextColor(...BRAND);
       doc.text(`${i + 1}.`, margin + 2, y);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...BODY);
@@ -307,21 +352,18 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
     // Steps
     checkPage(14);
     y = sectionTitle(doc, "Step-by-Step Method", margin, y);
-
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...BODY);
     recipe.steps.forEach((step, i) => {
       const lines = doc.splitTextToSize(step, contentWidth - 14);
       checkPage(lines.length * 5 + 6);
-      // Step number
-      doc.setFillColor(...ORANGE);
+      doc.setFillColor(...BRAND);
       doc.circle(margin + 5, y - 2, 3.5, "F");
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(255, 255, 255);
       doc.text(`${i + 1}`, margin + 5, y - 0.8, { align: "center" });
-      // Step text
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...BODY);
@@ -334,8 +376,7 @@ export function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?
     doc.setTextColor(...LIGHT_GRAY);
     doc.text(`Recipe ${idx + 1} of ${totalRecipes}`, pageWidth / 2, pageHeight - 12, { align: "center" });
 
-    // Bottom bar
-    doc.setFillColor(...ORANGE);
+    doc.setFillColor(...BRAND);
     doc.rect(0, pageHeight - 4, pageWidth, 4, "F");
   });
 

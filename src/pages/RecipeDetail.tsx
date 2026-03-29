@@ -43,7 +43,7 @@ const RecipeDetail = () => {
             <Link to="/recipes"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Link>
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => exportSingleRecipePdf(recipe)} className="border-primary/30 hover:bg-primary/10">
+            <Button variant="outline" onClick={() => { exportSingleRecipePdf(recipe); }} className="border-primary/30 hover:bg-primary/10">
               <Download className="h-4 w-4 mr-2" /> Export PDF
             </Button>
             {adminAccess && (
