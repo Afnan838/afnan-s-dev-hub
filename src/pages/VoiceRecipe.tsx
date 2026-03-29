@@ -1,13 +1,27 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Square, Loader2, ChefHat, Clock, Users, MapPin } from "lucide-react";
+import { Mic, Square, Loader2, ChefHat, Clock, Users, MapPin, Globe } from "lucide-react";
 import { toast } from "sonner";
 import SidebarLayout from "@/components/SidebarLayout";
 import RecipeConfirm from "@/components/RecipeConfirm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type RecipeData, saveLocalRecipe } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
+
+const LANGUAGES = [
+  { code: "en-IN", label: "English" },
+  { code: "hi-IN", label: "Hindi (हिन्दी)" },
+  { code: "kn-IN", label: "Kannada (ಕನ್ನಡ)" },
+  { code: "ta-IN", label: "Tamil (தமிழ்)" },
+  { code: "ml-IN", label: "Malayalam (മലയാളം)" },
+  { code: "te-IN", label: "Telugu (తెలుగు)" },
+  { code: "bn-IN", label: "Bengali (বাংলা)" },
+  { code: "mr-IN", label: "Marathi (मराठी)" },
+  { code: "gu-IN", label: "Gujarati (ગુજરાતી)" },
+  { code: "pa-IN", label: "Punjabi (ਪੰਜਾਬੀ)" },
+];
 
 const VoiceRecipe = () => {
   const [transcript, setTranscript] = useState("");
