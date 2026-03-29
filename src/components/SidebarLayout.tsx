@@ -128,7 +128,7 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
                           <img src={recipe.image} alt="" className="h-9 w-9 rounded-lg object-cover" />
                         ) : (
                           <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center">
-                            <ChefHat className="h-4 w-4 text-muted-foreground" />
+                            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
                           </div>
                         )}
                         <div className="min-w-0">
