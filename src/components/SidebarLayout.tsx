@@ -142,10 +142,17 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+            <button
+              onClick={() => toast.info("No new notifications")}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors relative"
+            >
               <Bell className="h-5 w-5" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
             </button>
-            <button className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary">
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+            >
               <User className="h-5 w-5" />
             </button>
           </div>
