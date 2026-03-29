@@ -4,6 +4,9 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
+import { isAdmin } from "@/lib/auth";
+import { Shield } from "lucide-react";
+
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/create", label: "Create Recipe", icon: Plus },
@@ -45,6 +48,15 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
               </Link>
             );
           })}
+          {isAdmin() && (
+            <Link
+              to="/admin"
+              className={`sidebar-item ${location.pathname === "/admin" ? "sidebar-item-active" : "sidebar-item-inactive"}`}
+            >
+              <Shield className="h-4.5 w-4.5" />
+              Admin Panel
+            </Link>
+          )}
         </nav>
 
         {/* Footer */}
