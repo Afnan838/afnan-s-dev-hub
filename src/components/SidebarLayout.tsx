@@ -59,7 +59,6 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
         <nav className="flex-1 space-y-1 px-3 pt-2">
           {navItems.map(({ to, label, icon: Icon }) => {
             const isActive = location.pathname === to || (to === "/dashboard" && location.pathname === "/");
-            const isActive = location.pathname === to || (to === "/dashboard" && location.pathname === "/");
             return (
               <Link
                 key={to}
