@@ -14,6 +14,17 @@ const CreateRecipe = () => {
   const navigate = useNavigate();
   const user = getUser();
   const adminAccess = user && isAdmin();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
+  const [region, setRegion] = useState("");
+  const [description, setDescription] = useState("");
+  const [time, setTime] = useState("");
+  const [servings, setServings] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [ingredients, setIngredients] = useState([""]);
+  const [steps, setSteps] = useState([""]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   if (!adminAccess) {
     return (
@@ -27,17 +38,6 @@ const CreateRecipe = () => {
       </SidebarLayout>
     );
   }
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const [title, setTitle] = useState("");
-  const [region, setRegion] = useState("");
-  const [description, setDescription] = useState("");
-  const [time, setTime] = useState("");
-  const [servings, setServings] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [ingredients, setIngredients] = useState([""]);
-  const [steps, setSteps] = useState([""]);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleImageSelect = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
