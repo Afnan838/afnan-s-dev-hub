@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Plus, BookOpen, Mic, Download, Search, Bell, User, ChefHat, LogOut, Shield,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { isAdmin, getUser, logout } from "@/lib/auth";
 import { getLocalRecipes } from "@/lib/api";
 
