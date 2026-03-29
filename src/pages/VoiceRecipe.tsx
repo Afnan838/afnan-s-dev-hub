@@ -142,6 +142,26 @@ const VoiceRecipe = () => {
             <motion.div key="capture" className="grid gap-6 lg:grid-cols-2">
               {/* Left: Input */}
               <div className="space-y-4">
+              {/* Language Selector */}
+                <div className="section-card">
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Voice Language</span>
+                  </div>
+                  <Select value={selectedLang} onValueChange={setSelectedLang}>
+                    <SelectTrigger className="mt-2 bg-background border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Mic button */}
                 <div className="section-card flex flex-col items-center py-10">
                   <div className="relative">
