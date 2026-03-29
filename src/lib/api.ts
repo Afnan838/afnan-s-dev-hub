@@ -25,9 +25,6 @@ export const WS_AUDIO_URL = "ws://localhost:8000/ws/audio";
 
 export const REGIONS = ["Kerala", "Punjab", "Tamil Nadu", "Gujarat", "Maharashtra", "Karnataka", "Hyderabad", "Rajasthan", "Bengal", "Goa"];
 
-const imgs = [recipeCard1, recipeCard2, recipeCard3, recipeSamosa, recipeDal, recipeTandoori];
-const img = (i: number) => imgs[i % imgs.length];
-
 export const DEMO_RECIPES: RecipeData[] = [
   // ─── KERALA (5) ───
   { id: "k1", title: "Kerala Fish Curry", description: "Tangy and spicy fish curry with raw mango and coconut milk.", ingredients: ["500g fish (kingfish/seer)", "1 raw mango, sliced", "1 cup coconut milk", "2 tbsp coconut oil", "1 tsp turmeric", "2 tsp red chili powder", "Curry leaves", "1 tsp fenugreek seeds", "Salt to taste"], steps: ["Clean and marinate fish with turmeric and salt.", "Heat coconut oil, add fenugreek seeds and curry leaves.", "Add sliced onions, ginger, and green chilies. Sauté well.", "Add chili powder, turmeric, and raw mango. Cook 5 min.", "Pour coconut milk, bring to simmer, add fish pieces.", "Cook on low 10 min. Let rest before serving."], time: "30 min", servings: "4", region: "Kerala", image: img(0), createdAt: "2026-03-01T10:00:00Z" },
