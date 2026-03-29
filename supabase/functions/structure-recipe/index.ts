@@ -32,9 +32,9 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an expert Indian recipe parser and culinary assistant. Given a voice transcript describing a recipe or food item, extract and return a structured recipe. Be thorough with steps and precise with timing.
+            content: `You are an expert Indian recipe parser and culinary assistant. The user may speak in ${lang} or mix languages. Given a voice transcript describing a recipe or food item, extract and return a structured recipe in English. Be thorough with steps and precise with timing. Understand regional Indian languages including Hindi, Kannada, Tamil, Malayalam, Telugu, Bengali, Marathi, Gujarati, and Punjabi.
 
-You MUST respond using the suggest_recipe tool.`
+You MUST respond using the suggest_recipe tool. Always output the structured recipe in English regardless of input language.`
           },
           { role: "user", content: transcript },
         ],
