@@ -62,23 +62,6 @@ const CreateRecipe = () => {
     );
   }
 
-  const handleSave = useCallback(() => {
-    if (!title.trim()) { toast.error("Please enter a recipe title"); return; }
-    const recipe = saveLocalRecipe({
-      title: title.trim(),
-      description: description.trim(),
-      region,
-      time: time.trim(),
-      servings: servings.trim(),
-      videoUrl: videoUrl.trim(),
-      ingredients: ingredients.filter(Boolean),
-      steps: steps.filter(Boolean),
-      image: imagePreview || undefined,
-    });
-    toast.success("Recipe saved!");
-    navigate(`/recipe/${recipe.id}`);
-  }, [title, description, region, time, servings, videoUrl, ingredients, steps, imagePreview, navigate]);
-
   return (
     <SidebarLayout>
       <div className="max-w-3xl mx-auto">
