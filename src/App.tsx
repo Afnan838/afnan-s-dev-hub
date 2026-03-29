@@ -12,6 +12,7 @@ import VoiceRecipe from "./pages/VoiceRecipe";
 import ExportPage from "./pages/ExportPage";
 import RecipeDetail from "./pages/RecipeDetail";
 import AdminPanel from "./pages/AdminPanel";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
