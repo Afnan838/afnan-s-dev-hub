@@ -209,7 +209,7 @@ const VoiceRecipe = () => {
         <div>
           <h1 className="text-2xl font-display font-bold flex items-center gap-2">
             <Zap className="h-6 w-6 text-primary" />
-            Voice Recipe Assistant
+            {ASSISTANT_NAME} — Voice Recipe Assistant
           </h1>
           <p className="text-sm text-muted-foreground">Speak naturally like talking to Alexa or Siri — your recipe is structured instantly in your language</p>
         </div>
