@@ -322,11 +322,11 @@ const VoiceRecipe = () => {
                   </div>
                   <p className="text-sm text-muted-foreground mt-5">
                     {isProcessing ? (
-                      "AI is structuring your recipe..."
+                      `${ASSISTANT_NAME} is structuring your recipe...`
                     ) : isRecording ? (
                       <span className="flex items-center gap-2 text-primary">
                         <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        Listening... {handsFree ? "pause to auto-process" : "tap to stop"}
+                        {ASSISTANT_NAME} is listening... {handsFree ? "pause to auto-process" : "tap to stop"}
                       </span>
                     ) : (
                       "Tap to start — speak naturally in any language"
