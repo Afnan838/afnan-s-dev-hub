@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type RecipeData, saveLocalRecipe } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 
+const ASSISTANT_NAME = "Ira";
+
 const LANGUAGES = [
   { code: "en-IN", label: "English", ttsLang: "en-IN" },
   { code: "hi-IN", label: "Hindi (हिन्दी)", ttsLang: "hi-IN" },
@@ -21,6 +23,7 @@ const LANGUAGES = [
   { code: "mr-IN", label: "Marathi (मराठी)", ttsLang: "mr-IN" },
   { code: "gu-IN", label: "Gujarati (ગુજરાતી)", ttsLang: "gu-IN" },
   { code: "pa-IN", label: "Punjabi (ਪੰਜਾਬੀ)", ttsLang: "pa-IN" },
+  { code: "ur-IN", label: "Urdu (اردو)", ttsLang: "ur-IN" },
 ];
 
 const VoiceRecipe = () => {
