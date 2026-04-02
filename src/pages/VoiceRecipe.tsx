@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type RecipeData, saveLocalRecipe } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 
+const ASSISTANT_NAME = "Ira";
+
 const LANGUAGES = [
   { code: "en-IN", label: "English", ttsLang: "en-IN" },
   { code: "hi-IN", label: "Hindi (हिन्दी)", ttsLang: "hi-IN" },
@@ -21,6 +23,7 @@ const LANGUAGES = [
   { code: "mr-IN", label: "Marathi (मराठी)", ttsLang: "mr-IN" },
   { code: "gu-IN", label: "Gujarati (ગુજરાતી)", ttsLang: "gu-IN" },
   { code: "pa-IN", label: "Punjabi (ਪੰਜਾਬੀ)", ttsLang: "pa-IN" },
+  { code: "ur-IN", label: "Urdu (اردو)", ttsLang: "ur-IN" },
 ];
 
 const VoiceRecipe = () => {
@@ -206,7 +209,7 @@ const VoiceRecipe = () => {
         <div>
           <h1 className="text-2xl font-display font-bold flex items-center gap-2">
             <Zap className="h-6 w-6 text-primary" />
-            Voice Recipe Assistant
+            {ASSISTANT_NAME} — Voice Recipe Assistant
           </h1>
           <p className="text-sm text-muted-foreground">Speak naturally like talking to Alexa or Siri — your recipe is structured instantly in your language</p>
         </div>
@@ -319,11 +322,11 @@ const VoiceRecipe = () => {
                   </div>
                   <p className="text-sm text-muted-foreground mt-5">
                     {isProcessing ? (
-                      "AI is structuring your recipe..."
+                      `${ASSISTANT_NAME} is structuring your recipe...`
                     ) : isRecording ? (
                       <span className="flex items-center gap-2 text-primary">
                         <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        Listening... {handsFree ? "pause to auto-process" : "tap to stop"}
+                        {ASSISTANT_NAME} is listening... {handsFree ? "pause to auto-process" : "tap to stop"}
                       </span>
                     ) : (
                       "Tap to start — speak naturally in any language"
@@ -372,10 +375,10 @@ const VoiceRecipe = () => {
 
                 {/* How it works */}
                 <div className="section-card text-xs text-muted-foreground space-y-2">
-                  <h3 className="font-semibold text-foreground text-sm">🎙️ Works like Alexa & Siri</h3>
-                  <p>1. <strong>Tap mic</strong> and speak naturally in any Indian language</p>
-                  <p>2. <strong>Pause speaking</strong> — AI auto-detects silence and starts processing</p>
-                  <p>3. <strong>AI structures</strong> your recipe with ingredients, steps & timing</p>
+                  <h3 className="font-semibold text-foreground text-sm">🎙️ Meet {ASSISTANT_NAME} — Your Voice Chef</h3>
+                  <p>1. <strong>Say "Hey {ASSISTANT_NAME}"</strong> or tap mic and speak naturally in any language</p>
+                  <p>2. <strong>Pause speaking</strong> — {ASSISTANT_NAME} auto-detects silence and starts processing</p>
+                  <p>3. <strong>{ASSISTANT_NAME} structures</strong> your recipe with ingredients, steps & timing</p>
                   <p>4. <strong>Reads it back</strong> to you in your language via text-to-speech</p>
                   <p>5. <strong>Review & save</strong> — edit before saving to your collection</p>
                 </div>
@@ -466,7 +469,7 @@ const VoiceRecipe = () => {
                       <Mic className="h-6 w-6 text-primary absolute -bottom-1 -right-1" />
                     </div>
                     <p className="text-muted-foreground text-sm font-medium">
-                      "Hey, make me a chicken biryani..."
+                      "Hey {ASSISTANT_NAME}, make me a chicken biryani..."
                     </p>
                     <p className="text-muted-foreground/60 text-xs mt-2">
                       Just speak naturally — I'll structure the entire recipe for you
