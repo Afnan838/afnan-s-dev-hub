@@ -13,7 +13,7 @@ const navItems = [
   { to: "/admin", label: "Admin Panel", icon: Shield },
   { to: "/create", label: "Create Recipe", icon: Plus },
   { to: "/recipes", label: "My Recipes", icon: BookOpen },
-  { to: "/voice-recipe", label: "Voice Recipe", icon: Mic },
+  { to: "/voice-recipe", label: "Ira (Voice Chef)", icon: Mic },
   { to: "/export", label: "Export", icon: Download },
   { to: "/profile", label: "Profile", icon: User },
 ];
