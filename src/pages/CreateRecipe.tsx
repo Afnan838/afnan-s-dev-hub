@@ -15,6 +15,9 @@ const CreateRecipe = () => {
   const user = getUser();
   const adminAccess = user && isAdmin();
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [region, setRegion] = useState("");
   const [description, setDescription] = useState("");
