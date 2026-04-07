@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ChefHat, Users, Trash2, Edit, Eye, Download, Shield, CheckCircle2,
-  Server, Wifi, MessageSquare, FileJson, Volume2, Settings, LogOut,
+  Server, Wifi, MessageSquare, FileJson, Volume2, Settings, LogOut, Clock, XCircle, Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SidebarLayout from "@/components/SidebarLayout";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { getLocalRecipes, deleteLocalRecipe, type RecipeData } from "@/lib/api";
+import { getLocalRecipes, deleteLocalRecipe, getPendingRecipes, approveRecipe, rejectRecipe, type RecipeData } from "@/lib/api";
 import { getUser, isAdmin, logout } from "@/lib/auth";
 import RecipeDetailModal from "@/components/RecipeDetailModal";
 
