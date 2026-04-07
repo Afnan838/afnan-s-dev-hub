@@ -119,7 +119,7 @@ const AdminPanel = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {stats.map(({ label, value, icon: Icon }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="stat-card flex items-center justify-between">
               <div>
