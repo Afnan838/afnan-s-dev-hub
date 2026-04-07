@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ChefHat, Users, Trash2, Edit, Eye, Download, Shield, CheckCircle2,
-  Server, Wifi, MessageSquare, FileJson, Volume2, Settings, LogOut,
+  Server, Wifi, MessageSquare, FileJson, Volume2, Settings, LogOut, Clock, XCircle, Check,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SidebarLayout from "@/components/SidebarLayout";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { getLocalRecipes, deleteLocalRecipe, type RecipeData } from "@/lib/api";
+import { getLocalRecipes, deleteLocalRecipe, getPendingRecipes, approveRecipe, rejectRecipe, type RecipeData } from "@/lib/api";
 import { getUser, isAdmin, logout } from "@/lib/auth";
 import RecipeDetailModal from "@/components/RecipeDetailModal";
 
@@ -45,13 +45,19 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const user = getUser();
   const [recipes, setRecipes] = useState(getLocalRecipes());
+  const [pendingRecipes, setPendingRecipes] = useState(getPendingRecipes());
   const [search, setSearch] = useState("");
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeData | null>(null);
   const adminAccess = user && isAdmin();
 
+  const approvedRecipes = useMemo(() =>
+    recipes.filter((r) => r.status !== "pending" && r.status !== "rejected"),
+    [recipes]
+  );
+
   const filtered = useMemo(() =>
-    recipes.filter((r) => r.title.toLowerCase().includes(search.toLowerCase())),
-    [recipes, search]
+    approvedRecipes.filter((r) => r.title.toLowerCase().includes(search.toLowerCase())),
+    [approvedRecipes, search]
   );
 
   if (!adminAccess) {
@@ -70,7 +76,22 @@ const AdminPanel = () => {
   const handleDelete = (id: string) => {
     deleteLocalRecipe(id);
     setRecipes(getLocalRecipes());
+    setPendingRecipes(getPendingRecipes());
     toast.success("Recipe deleted");
+  };
+
+  const handleApprove = (id: string) => {
+    approveRecipe(id);
+    setRecipes(getLocalRecipes());
+    setPendingRecipes(getPendingRecipes());
+    toast.success("Recipe approved!");
+  };
+
+  const handleReject = (id: string) => {
+    rejectRecipe(id);
+    setRecipes(getLocalRecipes());
+    setPendingRecipes(getPendingRecipes());
+    toast.success("Recipe rejected");
   };
 
   const handleLogout = () => {
@@ -79,7 +100,8 @@ const AdminPanel = () => {
   };
 
   const stats = [
-    { label: "Total Recipes", value: recipes.length, icon: ChefHat },
+    { label: "Total Recipes", value: approvedRecipes.length, icon: ChefHat },
+    { label: "Pending Approval", value: pendingRecipes.length, icon: Clock },
     { label: "Regions", value: [...new Set(recipes.map(r => r.region).filter(Boolean))].length, icon: Users },
   ];
 
@@ -97,7 +119,7 @@ const AdminPanel = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {stats.map(({ label, value, icon: Icon }, i) => (
             <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="stat-card flex items-center justify-between">
               <div>
@@ -111,12 +133,58 @@ const AdminPanel = () => {
           ))}
         </div>
 
-        <Tabs defaultValue="recipes" className="space-y-4">
+        <Tabs defaultValue="pending" className="space-y-4">
           <TabsList className="bg-card border border-border">
+            <TabsTrigger value="pending">Pending Approvals ({pendingRecipes.length})</TabsTrigger>
             <TabsTrigger value="recipes">Recipe Management</TabsTrigger>
             <TabsTrigger value="architecture">Architecture</TabsTrigger>
             <TabsTrigger value="demo">Demo Readiness</TabsTrigger>
           </TabsList>
+
+          {/* Pending Approvals Tab */}
+          <TabsContent value="pending" className="space-y-4">
+            {pendingRecipes.length === 0 ? (
+              <div className="section-card text-center py-12">
+                <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                <p className="text-muted-foreground">No pending recipes. All caught up!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingRecipes.map((recipe) => (
+                  <motion.div
+                    key={recipe.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
+                  >
+                    {recipe.image ? (
+                      <img src={recipe.image} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                    ) : (
+                      <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center">
+                        <ChefHat className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{recipe.title}</p>
+                      <p className="text-xs text-muted-foreground">{recipe.region || "Unknown"} · {recipe.time || "N/A"}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{recipe.description}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedRecipe(recipe)}>
+                        <Eye className="h-4 w-4 mr-1" /> View
+                      </Button>
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApprove(recipe.id)}>
+                        <Check className="h-4 w-4 mr-1" /> Approve
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleReject(recipe.id)}>
+                        <XCircle className="h-4 w-4 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           {/* Recipes Tab */}
           <TabsContent value="recipes" className="space-y-4">

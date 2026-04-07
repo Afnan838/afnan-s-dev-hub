@@ -63,6 +63,7 @@ export interface RecipeData {
   videoUrl?: string;
   createdAt: string;
   userId?: string;
+  status?: "approved" | "pending" | "rejected";
 }
 
 export interface WebSocketMessage {
@@ -159,7 +160,7 @@ export function getLocalRecipes(): RecipeData[] {
   }
 }
 
-export function saveLocalRecipe(recipe: Partial<RecipeData>): RecipeData {
+export function saveLocalRecipe(recipe: Partial<RecipeData>, isAdmin = false): RecipeData {
   const recipes = getLocalRecipes();
   const newRecipe: RecipeData = {
     id: crypto.randomUUID(),
@@ -173,10 +174,29 @@ export function saveLocalRecipe(recipe: Partial<RecipeData>): RecipeData {
     image: recipe.image,
     videoUrl: recipe.videoUrl,
     createdAt: new Date().toISOString(),
+    status: isAdmin ? "approved" : "pending",
   };
   recipes.unshift(newRecipe);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
   return newRecipe;
+}
+
+export function getPendingRecipes(): RecipeData[] {
+  return getLocalRecipes().filter((r) => r.status === "pending");
+}
+
+export function approveRecipe(id: string): void {
+  const recipes = getLocalRecipes().map((r) =>
+    r.id === id ? { ...r, status: "approved" as const } : r
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+}
+
+export function rejectRecipe(id: string): void {
+  const recipes = getLocalRecipes().map((r) =>
+    r.id === id ? { ...r, status: "rejected" as const } : r
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
 }
 
 export function deleteLocalRecipe(id: string): void {
