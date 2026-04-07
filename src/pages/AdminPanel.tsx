@@ -45,6 +45,7 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const user = getUser();
   const [recipes, setRecipes] = useState(getLocalRecipes());
+  const [pendingRecipes, setPendingRecipes] = useState(getPendingRecipes());
   const [search, setSearch] = useState("");
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeData | null>(null);
   const adminAccess = user && isAdmin();
