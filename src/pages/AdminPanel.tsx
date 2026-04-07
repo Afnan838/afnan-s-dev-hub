@@ -100,7 +100,8 @@ const AdminPanel = () => {
   };
 
   const stats = [
-    { label: "Total Recipes", value: recipes.length, icon: ChefHat },
+    { label: "Total Recipes", value: approvedRecipes.length, icon: ChefHat },
+    { label: "Pending Approval", value: pendingRecipes.length, icon: Clock },
     { label: "Regions", value: [...new Set(recipes.map(r => r.region).filter(Boolean))].length, icon: Users },
   ];
 
