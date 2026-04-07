@@ -47,10 +47,14 @@ const CreateRecipe = () => {
       ingredients: ingredients.filter(Boolean),
       steps: steps.filter(Boolean),
       image: imagePreview || undefined,
-    });
-    toast.success("Recipe saved!");
+    }, adminAccess);
+    if (adminAccess) {
+      toast.success("Recipe saved!");
+    } else {
+      toast.success("Recipe submitted for admin approval!");
+    }
     navigate(`/recipe/${recipe.id}`);
-  }, [title, description, region, time, servings, videoUrl, ingredients, steps, imagePreview, navigate]);
+  }, [title, description, region, time, servings, videoUrl, ingredients, steps, imagePreview, navigate, adminAccess]);
 
   if (!adminAccess) {
     return (
