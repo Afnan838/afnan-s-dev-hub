@@ -133,12 +133,58 @@ const AdminPanel = () => {
           ))}
         </div>
 
-        <Tabs defaultValue="recipes" className="space-y-4">
+        <Tabs defaultValue="pending" className="space-y-4">
           <TabsList className="bg-card border border-border">
+            <TabsTrigger value="pending">Pending Approvals ({pendingRecipes.length})</TabsTrigger>
             <TabsTrigger value="recipes">Recipe Management</TabsTrigger>
             <TabsTrigger value="architecture">Architecture</TabsTrigger>
             <TabsTrigger value="demo">Demo Readiness</TabsTrigger>
           </TabsList>
+
+          {/* Pending Approvals Tab */}
+          <TabsContent value="pending" className="space-y-4">
+            {pendingRecipes.length === 0 ? (
+              <div className="section-card text-center py-12">
+                <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                <p className="text-muted-foreground">No pending recipes. All caught up!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingRecipes.map((recipe) => (
+                  <motion.div
+                    key={recipe.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
+                  >
+                    {recipe.image ? (
+                      <img src={recipe.image} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                    ) : (
+                      <div className="h-14 w-14 rounded-lg bg-secondary flex items-center justify-center">
+                        <ChefHat className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold truncate">{recipe.title}</p>
+                      <p className="text-xs text-muted-foreground">{recipe.region || "Unknown"} · {recipe.time || "N/A"}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{recipe.description}</p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedRecipe(recipe)}>
+                        <Eye className="h-4 w-4 mr-1" /> View
+                      </Button>
+                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApprove(recipe.id)}>
+                        <Check className="h-4 w-4 mr-1" /> Approve
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleReject(recipe.id)}>
+                        <XCircle className="h-4 w-4 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           {/* Recipes Tab */}
           <TabsContent value="recipes" className="space-y-4">
