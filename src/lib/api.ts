@@ -63,6 +63,7 @@ export interface RecipeData {
   videoUrl?: string;
   createdAt: string;
   userId?: string;
+  status?: "approved" | "pending" | "rejected";
 }
 
 export interface WebSocketMessage {
