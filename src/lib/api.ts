@@ -64,6 +64,7 @@ export interface RecipeData {
   createdAt: string;
   userId?: string;
   status?: "approved" | "pending" | "rejected";
+  voice_record_id?: number;
 }
 
 export interface WebSocketMessage {
@@ -148,22 +149,35 @@ export const DEMO_RECIPES: RecipeData[] = [
   { id: "go5", title: "Sorak Curry", description: "Simple Goan coconut curry served over rice, a daily staple.", ingredients: ["1 cup grated coconut", "2 dried red chilies", "1 tsp coriander seeds", "Tamarind", "Turmeric", "Onion", "Green chilies", "Kokum"], steps: ["Grind coconut with red chilies, coriander, turmeric.", "Dissolve paste in water.", "Sauté sliced onion, add coconut mixture.", "Add kokum and green chilies.", "Simmer 15 min until flavors meld.", "Serve over steamed rice."], time: "20 min", servings: "4", region: "Goa", image: sorakCurry, createdAt: "2026-03-10T14:00:00Z" },
 ];
 
-// Local storage helpers
-const STORAGE_KEY = "recipeai_recipes";
+import { addDBRecipe, getAllDBRecipes, deleteDBRecipe, clearAllDBRecipes } from "./premium-db";
 
-export function getLocalRecipes(): RecipeData[] {
+const INIT_KEY = "recipeai_db_initialized";
+
+export async function getRecipes(): Promise<RecipeData[]> {
   try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return stored.length > 0 ? stored : DEMO_RECIPES;
-  } catch {
+    let recipes = await getAllDBRecipes();
+    
+    // Initialize with DEMO_RECIPES on first run
+    if (recipes.length === 0 && !localStorage.getItem(INIT_KEY)) {
+      for (const demo of DEMO_RECIPES) {
+        // Assume DEMO_RECIPES are already approved
+        demo.status = "approved";
+        await addDBRecipe(demo);
+      }
+      localStorage.setItem(INIT_KEY, "true");
+      recipes = await getAllDBRecipes();
+    }
+    
+    return recipes;
+  } catch (err) {
+    console.error("Failed to load recipes from DB", err);
     return DEMO_RECIPES;
   }
 }
 
-export function saveLocalRecipe(recipe: Partial<RecipeData>, isAdmin = false): RecipeData {
-  const recipes = getLocalRecipes();
+export async function saveLocalRecipe(recipe: Partial<RecipeData>, isAdmin = false): Promise<RecipeData> {
   const newRecipe: RecipeData = {
-    id: crypto.randomUUID(),
+    id: recipe.id || crypto.randomUUID(),
     title: recipe.title || "Untitled Recipe",
     description: recipe.description || "",
     ingredients: recipe.ingredients || [],
@@ -173,56 +187,53 @@ export function saveLocalRecipe(recipe: Partial<RecipeData>, isAdmin = false): R
     region: recipe.region || "",
     image: recipe.image,
     videoUrl: recipe.videoUrl,
-    createdAt: new Date().toISOString(),
+    createdAt: recipe.createdAt || new Date().toISOString(),
     status: isAdmin ? "approved" : "pending",
+    voice_record_id: recipe.voice_record_id,
   };
-  recipes.unshift(newRecipe);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+  
+  await addDBRecipe(newRecipe);
   return newRecipe;
 }
 
-export function getPendingRecipes(): RecipeData[] {
-  return getLocalRecipes().filter((r) => r.status === "pending");
+export async function getPendingRecipes(): Promise<RecipeData[]> {
+  const recipes = await getRecipes();
+  return recipes.filter((r) => r.status === "pending");
 }
 
-export function approveRecipe(id: string): void {
-  const recipes = getLocalRecipes().map((r) =>
-    r.id === id ? { ...r, status: "approved" as const } : r
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-}
-
-export function rejectRecipe(id: string): void {
-  const recipes = getLocalRecipes().map((r) =>
-    r.id === id ? { ...r, status: "rejected" as const } : r
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-}
-
-export function deleteLocalRecipe(id: string): void {
-  const recipes = getLocalRecipes().filter((r) => r.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
-}
-
-// API calls (fallback to local)
-export async function saveRecipe(recipe: RecipeData, imageFile?: File): Promise<RecipeData> {
-  try {
-    const formData = new FormData();
-    formData.append("recipe", JSON.stringify(recipe));
-    if (imageFile) formData.append("image", imageFile);
-    const res = await fetch(`${API_BASE_URL}/recipes/save`, { method: "POST", body: formData });
-    if (!res.ok) throw new Error();
-    return res.json();
-  } catch {
-    return saveLocalRecipe(recipe);
+export async function approveRecipe(id: string): Promise<void> {
+  const recipes = await getRecipes();
+  const recipe = recipes.find(r => r.id === id);
+  if (recipe) {
+    recipe.status = "approved";
+    await addDBRecipe(recipe); // put overrides the existing record
   }
+}
+
+export async function rejectRecipe(id: string): Promise<void> {
+  const recipes = await getRecipes();
+  const recipe = recipes.find(r => r.id === id);
+  if (recipe) {
+    recipe.status = "rejected";
+    await addDBRecipe(recipe);
+  }
+}
+
+export async function deleteLocalRecipe(id: string): Promise<void> {
+  await deleteDBRecipe(id);
+}
+
+export async function restoreDemoRecipes(): Promise<void> {
+  await clearAllDBRecipes();
+  localStorage.removeItem(INIT_KEY);
+  await getRecipes(); // Re-seed
+}
+
+// Keeping saveRecipe/deleteRecipe aliases for existing callers if any (or they can just use the async versions)
+export async function saveRecipe(recipe: RecipeData, imageFile?: File): Promise<RecipeData> {
+  return saveLocalRecipe(recipe);
 }
 
 export async function deleteRecipe(id: string): Promise<void> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/recipes/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error();
-  } catch {
-    deleteLocalRecipe(id);
-  }
+  await deleteLocalRecipe(id);
 }

@@ -1,14 +1,20 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChefHat, Clock, MapPin, Grid3X3, List, Filter } from "lucide-react";
 import SidebarLayout from "@/components/SidebarLayout";
-import { getLocalRecipes, REGIONS } from "@/lib/api";
+import { getRecipes, RecipeData, REGIONS } from "@/lib/api";
 
 const MyRecipes = () => {
-  const [recipes] = useState(() => getLocalRecipes().filter(r => r.status !== "pending" && r.status !== "rejected"));
+  const [recipes, setRecipes] = useState<RecipeData[]>([]);
   const [activeRegion, setActiveRegion] = useState("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  useEffect(() => {
+    getRecipes().then(data => {
+      setRecipes(data.filter(r => r.status !== "pending" && r.status !== "rejected"));
+    }).catch(console.error);
+  }, []);
 
   const filtered = useMemo(
     () => activeRegion === "All" ? recipes : recipes.filter((r) => r.region === activeRegion),

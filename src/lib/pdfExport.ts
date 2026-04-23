@@ -172,6 +172,8 @@ export async function exportSingleRecipePdf(recipe: RecipeData) {
   doc.rect(0, pageHeight - 4, pageWidth, 4, "F");
 
   doc.save(`${recipe.title.replace(/\s+/g, "_")}_Report.pdf`);
+  const pdfBlob = doc.output("blob");
+  window.open(URL.createObjectURL(pdfBlob), "_blank");
 }
 
 export async function exportRecipeBookPdf(recipes: RecipeData[], options?: { addCover?: boolean }) {
@@ -381,4 +383,6 @@ export async function exportRecipeBookPdf(recipes: RecipeData[], options?: { add
   });
 
   doc.save("Native_Indian_Recipe_Book.pdf");
+  const pdfBlob = doc.output("blob");
+  window.open(URL.createObjectURL(pdfBlob), "_blank");
 }

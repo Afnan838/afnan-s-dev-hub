@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type RecipeData, saveLocalRecipe } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getUser } from "@/lib/auth";
 
 const ASSISTANT_NAME = "Ira";
 
@@ -242,7 +243,7 @@ const VoiceRecipe = () => {
             setIsRecording(false);
             processWithAI(finalTranscript.trim());
           }
-        }, 2500);
+        }, 1200);
       }
     };
 
@@ -280,7 +281,9 @@ const VoiceRecipe = () => {
   }, [processWithAI]);
 
   const handleConfirmSave = useCallback(async (confirmedRecipe: RecipeData) => {
-    saveLocalRecipe(confirmedRecipe);
+    let savedRecipe = { ...confirmedRecipe };
+
+    saveLocalRecipe(savedRecipe);
     const msg = "Recipe saved to your collection! Want to cook something else?";
     addChatMessage("ira", msg, "✅", "chat");
     speak(msg, selectedLang);

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Clock, Users, MapPin, ChefHat, Utensils, ArrowLeft, Download, Pencil, Trash2 } from "lucide-react";
 import SidebarLayout from "@/components/SidebarLayout";
 import { Button } from "@/components/ui/button";
-import { getLocalRecipes, deleteLocalRecipe } from "@/lib/api";
+import { getRecipes, deleteLocalRecipe, type RecipeData } from "@/lib/api";
 import { exportSingleRecipePdf } from "@/lib/pdfExport";
 import { getUser, isAdmin } from "@/lib/auth";
 import { toast } from "sonner";
@@ -12,9 +12,17 @@ import { toast } from "sonner";
 const RecipeDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const recipes = getLocalRecipes();
-  const recipe = recipes.find((r) => r.id === id);
+  const [recipe, setRecipe] = useState<RecipeData | null>(null);
+  const [loading, setLoading] = useState(true);
   const adminAccess = isAdmin();
+
+  useEffect(() => {
+    getRecipes().then(recipes => {
+      const found = recipes.find((r) => r.id === id);
+      setRecipe(found || null);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [id]);
 
   const handleDelete = () => {
     if (recipe?.id) {
@@ -24,10 +32,20 @@ const RecipeDetail = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <SidebarLayout>
+        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+          Loading recipe...
+        </div>
+      </SidebarLayout>
+    );
+  }
+
   if (!recipe) {
     return (
       <SidebarLayout>
-        <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-xl font-display font-bold mb-4">Recipe not found</p>
           <Button asChild variant="outline"><Link to="/recipes">Back to Recipes</Link></Button>
         </div>
@@ -43,11 +61,11 @@ const RecipeDetail = () => {
             <Link to="/recipes"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Link>
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => { exportSingleRecipePdf(recipe); }} className="border-primary/30 hover:bg-primary/10">
+            <Button variant="outline" onClick={() => { exportSingleRecipePdf(recipe); }}>
               <Download className="h-4 w-4 mr-2" /> Export PDF
             </Button>
             {adminAccess && (
-              <Button variant="outline" onClick={handleDelete} className="border-destructive/30 hover:bg-destructive/10 text-destructive">
+              <Button variant="outline" onClick={handleDelete} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" /> Delete
               </Button>
             )}

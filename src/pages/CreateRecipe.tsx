@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { REGIONS, saveLocalRecipe } from "@/lib/api";
 import { getUser, isAdmin } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
+import { Mic, Square, Loader2 } from "lucide-react";
 
 const CreateRecipe = () => {
   const navigate = useNavigate();
@@ -28,16 +30,46 @@ const CreateRecipe = () => {
   const [steps, setSteps] = useState([""]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  
+  // Voice Dictation States
+  const [isDictating, setIsDictating] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [dictationTranscript, setDictationTranscript] = useState("");
+  const recognitionRef = useRef<any>(null);
 
   const handleImageSelect = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
     setImageFile(file);
+    
+    // Create immediate preview
     setImagePreview(URL.createObjectURL(file));
+    
+    // Convert to compressed Base64 for permanent DB storage
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxWidth = 800;
+        const scaleSize = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Overwrite the blob URL with the permanent Base64 string
+        const base64 = canvas.toDataURL("image/jpeg", 0.7);
+        setImagePreview(base64);
+      };
+    };
   }, []);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!title.trim()) { toast.error("Please enter a recipe title"); return; }
-    const recipe = saveLocalRecipe({
+    
+    const recipe = await saveLocalRecipe({
       title: title.trim(),
       description: description.trim(),
       region,
@@ -48,6 +80,7 @@ const CreateRecipe = () => {
       steps: steps.filter(Boolean),
       image: imagePreview || undefined,
     }, adminAccess);
+
     if (adminAccess) {
       toast.success("Recipe saved!");
     } else {
@@ -55,6 +88,84 @@ const CreateRecipe = () => {
     }
     navigate(`/recipe/${recipe.id}`);
   }, [title, description, region, time, servings, videoUrl, ingredients, steps, imagePreview, navigate, adminAccess]);
+
+  const startDictation = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error("Speech Recognition not supported in this browser.");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-IN";
+    
+    let finalTranscript = "";
+    
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + " ";
+        else interim += event.results[i][0].transcript;
+      }
+      setDictationTranscript(finalTranscript + interim);
+    };
+    
+    recognition.onerror = (e: any) => {
+      if (e.error !== "no-speech") toast.error(`Mic error: ${e.error}`);
+      setIsDictating(false);
+    };
+    
+    recognition.onend = () => {
+      setIsDictating(false);
+    };
+    
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsDictating(true);
+    // Don't clear transcript if we are just appending to a stopped session, but here we'll clear on fresh start
+    if (!dictationTranscript) setDictationTranscript("");
+  };
+
+  const stopDictation = () => {
+    recognitionRef.current?.stop();
+    setIsDictating(false);
+  };
+
+  const processDictation = async () => {
+    if (!dictationTranscript.trim()) return;
+    stopDictation();
+    
+    setIsProcessingVoice(true);
+    toast.info("AI is parsing your dictation...");
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("structure-recipe", {
+        body: { transcript: dictationTranscript.trim(), language: "English" }
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      const r = data.recipe;
+      if (r.title) setTitle(r.title);
+      if (r.description) setDescription(r.description);
+      if (r.time) setTime(r.time);
+      if (r.servings) setServings(r.servings);
+      if (r.region) setRegion(r.region);
+      if (r.ingredients && r.ingredients.length) setIngredients(r.ingredients);
+      if (r.steps && r.steps.length) setSteps(r.steps);
+      toast.success("Recipe auto-filled by AI!");
+      setDictationTranscript(""); // Clear after successful processing
+    } catch (err: any) {
+      console.error(err);
+      toast.warning("AI features disabled. Dictation added to description.");
+      setDescription((prev) => prev + (prev ? "\n\n" : "") + dictationTranscript.trim());
+      setDictationTranscript("");
+    } finally {
+      setIsProcessingVoice(false);
+    }
+  };
 
   // Allow all logged-in users to create recipes
 
@@ -77,6 +188,48 @@ const CreateRecipe = () => {
         </div>
 
         <div className="space-y-6">
+          {/* AI Dictation */}
+          <div className="section-card space-y-4 border border-primary/20 bg-primary/5">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="font-display font-semibold text-lg flex items-center gap-2">
+                  <Mic className="h-5 w-5 text-primary" />
+                  Dictate with AI
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">Speak your recipe out loud, and Ira will automatically fill in all the details below!</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={isDictating ? "destructive" : "default"}
+                  className={!isDictating ? "gradient-btn" : ""}
+                  onClick={isDictating ? stopDictation : startDictation}
+                  disabled={isProcessingVoice}
+                >
+                  {isDictating ? <Square className="h-4 w-4 mr-2" /> : <Mic className="h-4 w-4 mr-2" />}
+                  {isDictating ? "Stop Mic" : "Start Mic"}
+                </Button>
+                {dictationTranscript && (
+                  <Button
+                    size="sm"
+                    className="glow-orange"
+                    onClick={processDictation}
+                    disabled={isProcessingVoice || isDictating}
+                  >
+                    {isProcessingVoice ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+                    Fill Recipe
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            {(isDictating || dictationTranscript) && (
+              <div className="bg-background/50 rounded-lg p-3 border border-border min-h-[60px]">
+                <p className="text-sm italic text-foreground/80">{dictationTranscript || "Listening..."}</p>
+              </div>
+            )}
+          </div>
+
           {/* Basic Info */}
           <div className="section-card space-y-4">
             <h2 className="font-display font-semibold text-lg">Basic Information</h2>
@@ -89,7 +242,7 @@ const CreateRecipe = () => {
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                className="flex h-10 w-full rounded-md border border-input bg-slate-900 text-white px-3 py-2 text-sm ring-offset-background"
               >
                 <option value="">Select a region</option>
                 {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}

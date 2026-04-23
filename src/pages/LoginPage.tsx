@@ -24,10 +24,11 @@ const LoginPage = () => {
 
     setTimeout(() => {
       let user;
+      const cleanEmail = email.trim().toLowerCase();
       if (isSignup) {
-        user = signup(email, password, name);
+        user = signup(cleanEmail, password, name);
       } else {
-        user = login(email, password);
+        user = login(cleanEmail, password);
       }
 
       if (user) {

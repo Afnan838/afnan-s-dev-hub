@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Plus, BookOpen, Mic, Download, Search, Bell, User, UtensilsCrossed, LogOut, Shield,
@@ -6,7 +6,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { isAdmin, getUser, logout } from "@/lib/auth";
-import { getLocalRecipes } from "@/lib/api";
+import { getRecipes, RecipeData } from "@/lib/api";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -23,8 +23,12 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const user = getUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const [recipes, setRecipes] = useState<RecipeData[]>([]);
 
-  const recipes = useMemo(() => getLocalRecipes(), []);
+  useEffect(() => {
+    getRecipes().then(setRecipes).catch(console.error);
+  }, []);
+
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -44,7 +48,7 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-border bg-[hsl(var(--sidebar-bg))]">
+      <aside className="fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-0 card m-4">
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center gap-3 px-5 py-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
@@ -64,17 +68,21 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
               <Link
                 key={to}
                 to={to}
-                className={`sidebar-item ${isActive ? "sidebar-item-active" : "sidebar-item-inactive"}`}
+                className={`group flex items-center gap-x-3 rounded-xl p-3 text-sm font-semibold transition-all duration-300 ${
+                  isActive
+                    ? "gradient-btn shadow-md hover:-translate-y-0.5"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
               >
-                <Icon className="h-4.5 w-4.5" />
+                <Icon className="h-5 w-5 shrink-0" />
                 {label}
               </Link>
             );
           })}
-        </nav>
+          </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 space-y-2">
+        <div className="p-4 space-y-2">
           {user && (
             <div className="flex items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-primary">
@@ -88,16 +96,16 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
           )}
           <button
             onClick={handleLogout}
-            className="sidebar-item sidebar-item-inactive w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+            className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors"
           >
-            <LogOut className="h-4.5 w-4.5" />
+            <LogOut className="h-5 w-5" />
             Logout
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <div className="flex-1 pl-60">
+      {/* Main content */}
+      <div className="lg:pl-[19.5rem] pr-0 lg:pr-4 py-4 min-h-screen w-full">
         {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/80 backdrop-blur-xl px-6">
           <div className="flex-1 max-w-md relative">
@@ -153,8 +161,11 @@ const SidebarLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="p-6">{children}</main>
+        <main className="mx-auto max-w-6xl w-full">
+          <div className="px-4 sm:px-6 lg:px-8 py-6 fade-in h-full flex flex-col">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );

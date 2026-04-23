@@ -1,10 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Download, FileText, ChefHat, MapPin, Check, FileJson, FileType, BookOpen } from "lucide-react";
 import SidebarLayout from "@/components/SidebarLayout";
 import { Button } from "@/components/ui/button";
-import { getLocalRecipes, type RecipeData } from "@/lib/api";
+import { getRecipes, type RecipeData } from "@/lib/api";
 import { exportRecipeBookPdf, exportSingleRecipePdf } from "@/lib/pdfExport";
 
 type ExportFormat = "pdf-book" | "pdf-single" | "json" | "text";
@@ -53,11 +53,15 @@ function exportAsJson(recipes: RecipeData[]) {
 }
 
 const ExportPage = () => {
-  const [recipes] = useState(getLocalRecipes());
+  const [recipes, setRecipes] = useState<RecipeData[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [addCover, setAddCover] = useState(true);
   const [includeRegional, setIncludeRegional] = useState(true);
   const [format, setFormat] = useState<ExportFormat>("pdf-book");
+
+  useEffect(() => {
+    getRecipes().then(setRecipes).catch(console.error);
+  }, []);
 
   const toggleRecipe = (id: string) => {
     setSelectedIds((prev) => {
