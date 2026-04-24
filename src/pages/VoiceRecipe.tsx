@@ -72,6 +72,11 @@ const VoiceRecipe = () => {
 
   // Cleanup on unmount
   useEffect(() => {
+    // Pre-fetch voices
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
+    
     return () => {
       recognitionRef.current?.stop();
       window.speechSynthesis?.cancel();
@@ -198,9 +203,6 @@ const VoiceRecipe = () => {
         setShowConfirm(true);
         setStatusText("✨ Recipe ready!");
         toast.success(`${ASSISTANT_NAME} structured your recipe!`);
-        
-        // Read out the entire generated recipe automatically
-        speakRecipe(fullRecipe, selectedLang);
       } else {
         setStatusText(`Tap mic to talk to ${ASSISTANT_NAME}`);
       }
