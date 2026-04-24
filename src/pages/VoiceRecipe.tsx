@@ -219,6 +219,13 @@ const VoiceRecipe = () => {
   }, [selectedLang, speak, addChatMessage, conversationHistory]);
 
   const startRecording = useCallback(() => {
+    // Unlock SpeechSynthesis on mobile devices synchronously during user interaction
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const unlock = new SpeechSynthesisUtterance("");
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       toast.error("Speech Recognition not supported. Try Chrome.");
@@ -307,6 +314,13 @@ const VoiceRecipe = () => {
   }, [addChatMessage, speak, selectedLang]);
 
   const handleTextSubmit = useCallback(() => {
+    // Unlock SpeechSynthesis on mobile devices synchronously during user interaction
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const unlock = new SpeechSynthesisUtterance("");
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
+    }
+
     if (transcript.trim()) {
       processWithAI(transcript.trim());
       setTranscript("");
