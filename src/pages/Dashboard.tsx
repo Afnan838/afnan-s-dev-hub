@@ -1,21 +1,23 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChefHat, TrendingUp, Clock, Plus, Users, MessageSquare, Send, Star } from "lucide-react";
+import { ChefHat, TrendingUp, Clock, Plus, Users, MessageSquare, Send, Star, Play } from "lucide-react";
 import SidebarLayout from "@/components/SidebarLayout";
 import { Button } from "@/components/ui/button";
 import { getRecipes, RecipeData } from "@/lib/api";
-import { getAllDBUsers, getAllDBFeedback, addDBFeedback, addDBVoiceRecord } from "@/lib/premium-db";
+import { getAllDBUsers, getAllDBFeedback, addDBFeedback, addDBVoiceRecord, DBFeedback, getDBVoiceRecord } from "@/lib/premium-db";
 import { getUser } from "@/lib/auth";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 
 const Dashboard = () => {
   const [recipes, setRecipes] = useState<RecipeData[]>([]);
+  const [feedbacks, setFeedbacks] = useState<DBFeedback[]>([]);
   const [totalFeedback, setTotalFeedback] = useState(0);
   const [feedbackText, setFeedbackText] = useState("");
   const [usersCount, setUsersCount] = useState(0);
   const [rating, setRating] = useState(0);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [playingAudio, setPlayingAudio] = useState<{ id: number, url: string } | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -24,6 +26,7 @@ const Dashboard = () => {
         const f = await getAllDBFeedback();
         const r = await getRecipes();
         setUsersCount(u.length);
+        setFeedbacks(f);
         setTotalFeedback(f.length);
         setRecipes(r);
       } catch (e) {
@@ -31,7 +34,24 @@ const Dashboard = () => {
       }
     };
     fetchStats();
+
+    return () => {
+      if (playingAudio) URL.revokeObjectURL(playingAudio.url);
+    };
   }, []);
+
+  const handlePlayVoice = async (recordId: number) => {
+    if (playingAudio?.id === recordId) return;
+    if (playingAudio) URL.revokeObjectURL(playingAudio.url);
+    
+    const record = await getDBVoiceRecord(recordId);
+    if (record) {
+      const url = URL.createObjectURL(record.blob);
+      setPlayingAudio({ id: recordId, url });
+    } else {
+      console.error("Voice record not found.");
+    }
+  };
 
   const handleSubmitFeedback = async () => {
     if (!feedbackText.trim() && rating === 0 && !voiceBlob) return;
@@ -59,6 +79,7 @@ const Dashboard = () => {
 
       // Update counters
       const f = await getAllDBFeedback();
+      setFeedbacks(f);
       setTotalFeedback(f.length);
       
       // Reset form
@@ -172,6 +193,50 @@ const Dashboard = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Community Feedback List */}
+      {feedbacks.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Community Feedback</h2>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            {feedbacks.map((fb, i) => (
+              <motion.div key={fb.id || i} initial={{opacity:0}} animate={{opacity:1}} transition={{delay: i*0.05}} className="card p-5 border-0 hover:border-cyan-500/30 transition-colors">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="text-white font-medium">{fb.user_email || "Unknown User"}</p>
+                    <p className="text-xs text-slate-400">{fb.created_at ? new Date(fb.created_at).toLocaleString() : "Unknown Date"}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="icon-circle px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1">
+                      {fb.rating || 0} <Star className="h-3 w-3 fill-current" />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-slate-300 mb-4">{fb.message || ""}</p>
+                
+                {fb.voice_record_id && (
+                  <div className="pt-4 border-t border-border/20 flex items-center gap-3">
+                    <Button size="sm" onClick={() => handlePlayVoice(fb.voice_record_id!)} className="bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-400">
+                      <Play className="h-4 w-4 mr-2" /> Play Audio
+                    </Button>
+                    {playingAudio?.id === fb.voice_record_id && (
+                      <audio src={playingAudio.url} controls autoPlay className="h-8 max-w-[200px] outline-none" />
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Your Recipes Grid */}
       <div className="flex items-center justify-between mb-6">
