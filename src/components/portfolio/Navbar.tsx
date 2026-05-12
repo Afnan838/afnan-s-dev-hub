@@ -25,8 +25,15 @@ const Navbar = () => {
 
   const scrollTo = (href: string) => {
     setIsOpen(false);
-    const el = document.querySelector(href);
-    el?.scrollIntoView({ behavior: "smooth" });
+    
+    setTimeout(() => {
+      const el = document.querySelector(href);
+      if (el) {
+        // Calculate offset to account for fixed navbar height (approx 80px)
+        const y = el.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    }, 150);
   };
 
   return (
