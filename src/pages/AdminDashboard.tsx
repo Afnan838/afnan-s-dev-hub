@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,18 +9,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  LogOut, LayoutDashboard, FolderKanban, Zap, FileText, MessageSquare,
-  Plus, Trash2, Edit2, X, Check, Loader2, Eye, EyeOff, ArrowLeft, Menu,
+  LogOut, LayoutDashboard, FolderKanban, Zap, FileText, MessageSquare, Award,
+  Plus, Trash2, Edit2, X, Check, Loader2, Eye, EyeOff, ArrowLeft, Menu, Mail,
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import emailjs from "@emailjs/browser";
 
-type Tab = "overview" | "projects" | "skills" | "blog" | "messages";
+type Tab = "overview" | "projects" | "skills" | "certifications" | "blog" | "messages";
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Redirect unauthenticated users immediately
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login", { replace: true });
+    }
+  }, [authLoading, user, navigate]);
 
   if (authLoading) {
     return (
@@ -30,10 +38,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+  if (!user) return null;
 
   if (!isAdmin) {
     return (
@@ -53,6 +58,7 @@ const AdminDashboard = () => {
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "projects", label: "Projects", icon: FolderKanban },
     { id: "skills", label: "Skills", icon: Zap },
+    { id: "certifications", label: "Certifications", icon: Award },
     { id: "blog", label: "Blog", icon: FileText },
     { id: "messages", label: "Messages", icon: MessageSquare },
   ];
@@ -134,6 +140,7 @@ const AdminDashboard = () => {
         {activeTab === "overview" && <OverviewTab />}
         {activeTab === "projects" && <ProjectsTab />}
         {activeTab === "skills" && <SkillsTab />}
+        {activeTab === "certifications" && <CertificationsTab />}
         {activeTab === "blog" && <BlogTab />}
         {activeTab === "messages" && <MessagesTab />}
       </div>
@@ -145,12 +152,14 @@ const AdminDashboard = () => {
 const OverviewTab = () => {
   const { data: projects } = useQuery({ queryKey: ["admin-projects"], queryFn: async () => (await supabase.from("projects").select("*")).data });
   const { data: skills } = useQuery({ queryKey: ["admin-skills"], queryFn: async () => (await supabase.from("skills").select("*")).data });
+  const { data: certifications } = useQuery({ queryKey: ["admin-certifications"], queryFn: async () => (await supabase.from("certifications").select("*")).data });
   const { data: blogs } = useQuery({ queryKey: ["admin-blogs"], queryFn: async () => (await supabase.from("blog_posts").select("*")).data });
   const { data: messages } = useQuery({ queryKey: ["admin-messages"], queryFn: async () => (await supabase.from("contact_messages").select("*")).data });
 
   const stats = [
     { label: "Projects", count: projects?.length ?? 0, icon: FolderKanban },
     { label: "Skills", count: skills?.length ?? 0, icon: Zap },
+    { label: "Certifications", count: certifications?.length ?? 0, icon: Award },
     { label: "Blog Posts", count: blogs?.length ?? 0, icon: FileText },
     { label: "Messages", count: messages?.length ?? 0, icon: MessageSquare },
   ];
@@ -271,21 +280,75 @@ const ProjectsTab = () => {
       ) : (
         <div className="space-y-3">
           {projects?.map((p) => (
-            <div key={p.id} className="card-elevated p-4 flex items-center justify-between">
+            <div key={p.id} className="card-elevated p-4">
+              {editing === p.id ? (
+                <EditProjectForm project={p} onCancel={() => setEditing(null)}
+                  onSaved={() => { setEditing(null); qc.invalidateQueries({ queryKey: ["admin-projects"] }); toast({ title: "Project updated!" }); }} />
+              ) : (
+              <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-display font-semibold text-foreground">{p.title}</h3>
                 <p className="text-sm text-muted-foreground">{p.category} · {(p.tags ?? []).join(", ")}</p>
               </div>
               <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setEditing(p.id)}><Edit2 className="w-3.5 h-3.5" /></Button>
                 <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(p.id)}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
+              </div>
+              )}
             </div>
           ))}
           {(!projects || projects.length === 0) && <p className="text-muted-foreground text-sm py-8 text-center">No projects yet. Add your first one!</p>}
         </div>
       )}
+    </div>
+  );
+};
+
+
+type ProjectRow = { id: string; title: string; description: string | null; category: string | null; tags: string[] | null; live_url: string | null; github_url: string | null; };
+const EditProjectForm = ({ project, onCancel, onSaved }: { project: ProjectRow; onCancel: () => void; onSaved: () => void }) => {
+  const { toast } = useToast();
+  const [form, setForm] = useState({
+    title: project.title,
+    description: project.description ?? "",
+    category: project.category ?? "",
+    tags: (project.tags ?? []).join(", "),
+    live_url: project.live_url ?? "",
+    github_url: project.github_url ?? "",
+  });
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("projects").update({
+        title: form.title, description: form.description, category: form.category,
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        live_url: form.live_url || null, github_url: form.github_url || null,
+      }).eq("id", project.id);
+      if (error) throw error;
+    },
+    onSuccess: onSaved,
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="bg-secondary border-border" />
+        <Input placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="bg-secondary border-border" />
+      </div>
+      <Textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="bg-secondary border-border" rows={3} />
+      <Input placeholder="Tags (comma separated)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="bg-secondary border-border" />
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Input placeholder="Live URL" value={form.live_url} onChange={(e) => setForm({ ...form, live_url: e.target.value })} className="bg-secondary border-border" />
+        <Input placeholder="GitHub URL" value={form.github_url} onChange={(e) => setForm({ ...form, github_url: e.target.value })} className="bg-secondary border-border" />
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => updateMutation.mutate()} disabled={!form.title || updateMutation.isPending} className="bg-primary text-primary-foreground">
+          {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Update</>}
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCancel}><X className="w-4 h-4 mr-1" /> Cancel</Button>
+      </div>
     </div>
   );
 };
@@ -487,14 +550,215 @@ const BlogTab = () => {
   );
 };
 
+// Certifications Tab
+const CertificationsTab = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [showForm, setShowForm] = useState(false);
+  const [editingCert, setEditingCert] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", issuer: "", issue_date: "", expiry_date: "", credential_id: "", credential_url: "" });
+
+  const { data: certifications, isLoading } = useQuery({
+    queryKey: ["admin-certifications"],
+    queryFn: async () => (await supabase.from("certifications").select("*").order("issue_date", { ascending: false })).data,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("certifications").insert({
+        name: form.name,
+        issuer: form.issuer,
+        issue_date: form.issue_date,
+        expiry_date: form.expiry_date || null,
+        credential_id: form.credential_id || null,
+        credential_url: form.credential_url || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-certifications"] });
+      setShowForm(false);
+      setForm({ name: "", issuer: "", issue_date: "", expiry_date: "", credential_id: "", credential_url: "" });
+      toast({ title: "Certification added!" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("certifications").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-certifications"] });
+      toast({ title: "Certification deleted" });
+    },
+  });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-display text-3xl font-bold text-foreground">Certifications</h1>
+        <Button onClick={() => setShowForm(!showForm)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Plus className="w-4 h-4 mr-2" /> Add Certification
+        </Button>
+      </div>
+
+      {showForm && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-6 mb-6 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Input placeholder="Certification name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-secondary border-border" />
+            <Input placeholder="Issuer" value={form.issuer} onChange={(e) => setForm({ ...form, issuer: e.target.value })} className="bg-secondary border-border" />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Issue Date</label>
+              <Input type="date" value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })} className="bg-secondary border-border" />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Expiry Date (optional)</label>
+              <Input type="date" value={form.expiry_date} onChange={(e) => setForm({ ...form, expiry_date: e.target.value })} className="bg-secondary border-border" />
+            </div>
+          </div>
+          <Input placeholder="Credential ID (optional)" value={form.credential_id} onChange={(e) => setForm({ ...form, credential_id: e.target.value })} className="bg-secondary border-border" />
+          <Input placeholder="Credential URL (optional)" value={form.credential_url} onChange={(e) => setForm({ ...form, credential_url: e.target.value })} className="bg-secondary border-border" />
+          <div className="flex gap-2">
+            <Button onClick={() => addMutation.mutate()} disabled={!form.name || !form.issuer || !form.issue_date || addMutation.isPending} className="bg-primary text-primary-foreground">
+              {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Save</>}
+            </Button>
+            <Button variant="outline" onClick={() => setShowForm(false)}><X className="w-4 h-4 mr-1" /> Cancel</Button>
+          </div>
+        </motion.div>
+      )}
+
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+      ) : (
+        <div className="space-y-3">
+          {certifications?.map((cert) => (
+            <div key={cert.id} className="card-elevated p-4">
+              {editingCert === cert.id ? (
+                <EditCertForm cert={cert} onCancel={() => setEditingCert(null)}
+                  onSaved={() => { setEditingCert(null); qc.invalidateQueries({ queryKey: ["admin-certifications"] }); toast({ title: "Certification updated!" }); }} />
+              ) : (
+              <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-display font-semibold text-foreground">{cert.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {cert.issuer} · {new Date(cert.issue_date).toLocaleDateString()}
+                  {cert.expiry_date && ` - ${new Date(cert.expiry_date).toLocaleDateString()}`}
+                </p>
+                {cert.credential_url && (
+                  <a href={cert.credential_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline mt-1">
+                    View Credential →
+                  </a>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setEditingCert(cert.id)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(cert.id)}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              </div>
+              )}
+            </div>
+          ))}
+          {(!certifications || certifications.length === 0) && <p className="text-muted-foreground text-sm py-8 text-center">No certifications yet. Add your first one!</p>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+type CertRow = { id: string; name: string; issuer: string; issue_date: string; expiry_date: string | null; credential_id: string | null; credential_url: string | null; };
+const EditCertForm = ({ cert, onCancel, onSaved }: { cert: CertRow; onCancel: () => void; onSaved: () => void }) => {
+  const { toast } = useToast();
+  const [form, setForm] = useState({
+    name: cert.name, issuer: cert.issuer, issue_date: cert.issue_date,
+    expiry_date: cert.expiry_date ?? "", credential_id: cert.credential_id ?? "", credential_url: cert.credential_url ?? "",
+  });
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("certifications").update({
+        name: form.name, issuer: form.issuer, issue_date: form.issue_date,
+        expiry_date: form.expiry_date || null, credential_id: form.credential_id || null, credential_url: form.credential_url || null,
+      }).eq("id", cert.id);
+      if (error) throw error;
+    },
+    onSuccess: onSaved,
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Input placeholder="Certification name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-secondary border-border" />
+        <Input placeholder="Issuer" value={form.issuer} onChange={(e) => setForm({ ...form, issuer: e.target.value })} className="bg-secondary border-border" />
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div><label className="text-xs text-muted-foreground mb-1 block">Issue Date</label><Input type="date" value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })} className="bg-secondary border-border" /></div>
+        <div><label className="text-xs text-muted-foreground mb-1 block">Expiry Date</label><Input type="date" value={form.expiry_date} onChange={(e) => setForm({ ...form, expiry_date: e.target.value })} className="bg-secondary border-border" /></div>
+      </div>
+      <Input placeholder="Credential ID" value={form.credential_id} onChange={(e) => setForm({ ...form, credential_id: e.target.value })} className="bg-secondary border-border" />
+      <Input placeholder="Credential URL" value={form.credential_url} onChange={(e) => setForm({ ...form, credential_url: e.target.value })} className="bg-secondary border-border" />
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => updateMutation.mutate()} disabled={!form.name || updateMutation.isPending} className="bg-primary text-primary-foreground">
+          {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Update</>}
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCancel}><X className="w-4 h-4 mr-1" /> Cancel</Button>
+      </div>
+    </div>
+  );
+};
+
 // Messages Tab
 const MessagesTab = () => {
   const qc = useQueryClient();
+  const { toast } = useToast();
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ["admin-messages"],
     queryFn: async () => (await supabase.from("contact_messages").select("*").order("created_at", { ascending: false })).data,
   });
+
+  const sendEmailReply = async (messageId: string, senderEmail: string, senderName: string, subject: string) => {
+    try {
+      // Check if EmailJS is initialized
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (!serviceId || !templateId || !publicKey) {
+        toast({
+          title: "Error",
+          description: "Email configuration not set up. Please add VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY to your .env file",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      emailjs.init(publicKey);
+
+      const templateParams = {
+        to_email: senderEmail,
+        to_name: senderName,
+        subject: `Re: ${subject}`,
+        message: `Thank you for reaching out! I've received your message and will get back to you soon.`,
+      };
+
+      await emailjs.send(serviceId, templateId, templateParams);
+      toast({ title: "Email sent!", description: `Reply sent to ${senderEmail}` });
+      markRead.mutate({ id: messageId, read: false });
+    } catch (error) {
+      console.error("Email error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send email. Check console for details.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const markRead = useMutation({
     mutationFn: async ({ id, read }: { id: string; read: boolean }) => {
@@ -525,6 +789,14 @@ const MessagesTab = () => {
                   <p className="text-xs text-muted-foreground">{msg.email} · {new Date(msg.created_at).toLocaleString()}</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-primary hover:bg-primary/10"
+                    onClick={() => sendEmailReply(msg.id, msg.email, msg.name, msg.subject)}
+                  >
+                    <Mail className="w-3.5 h-3.5 mr-1" /> Reply
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => markRead.mutate({ id: msg.id, read: !!msg.read })}>
                     {msg.read ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </Button>

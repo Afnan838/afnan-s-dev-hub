@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import LandingPage from "./pages/LandingPage.tsx";
 import Index from "./pages/Index.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import LoginPage from "./pages/LoginPage.tsx";
 import BlogPage, { BlogPostPage } from "./pages/BlogPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/portfolio" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />

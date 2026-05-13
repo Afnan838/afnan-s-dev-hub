@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Code2, Home } from "lucide-react";
+import { Menu, X, Code2, Home, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Home", href: "#home" },
@@ -16,6 +17,12 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const goToAdmin = () => {
+    setIsOpen(false);
+    navigate(user ? "/admin" : "/login");
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -76,6 +83,13 @@ const Navbar = () => {
               {link.label}
             </button>
           ))}
+          <button
+            onClick={goToAdmin}
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 hover:glow-primary transition-all"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            Admin
+          </button>
         </div>
 
         <button className="md:hidden text-foreground" onClick={() => setIsOpen(!isOpen)}>
@@ -101,6 +115,13 @@ const Navbar = () => {
                   {link.label}
                 </button>
               ))}
+              <button
+                onClick={goToAdmin}
+                className="flex items-center gap-2 text-primary font-semibold py-2 border-t border-border/50 pt-4"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin Panel
+              </button>
             </div>
           </motion.div>
         )}

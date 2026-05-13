@@ -29,28 +29,54 @@ const ContactSection = () => {
       return;
     }
 
-    const { error } = await supabase.from("contact_messages").insert({ name, email, subject, message });
+    // Save message to database
+    const { error: dbError } = await supabase.from("contact_messages").insert({ name, email, subject, message });
 
+    // Send admin notification email
     try {
-      // Replace these placeholders with your actual EmailJS credentials
-      await emailjs.send(
-        "YOUR_SERVICE_ID", 
-        "YOUR_TEMPLATE_ID", 
-        {
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+      // Always fall back to hardcoded admin email so you always get notified
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || "afuaduis838@gmail.com";
+
+      if (serviceId && templateId && publicKey) {
+        emailjs.init(publicKey);
+
+        await emailjs.send(serviceId, templateId, {
+          to_email: adminEmail,
           from_name: name,
           from_email: email,
           subject: subject,
           message: message,
-        },
-        "YOUR_PUBLIC_KEY" 
-      );
+        });
+      }
     } catch (err) {
-      console.warn("EmailJS error (this is expected if you haven't set up your credentials yet):", err);
+      console.warn("Admin notification email failed (non-critical):", err);
+    }
+
+    // Send confirmation email to user
+    try {
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const confirmTemplateId = import.meta.env.VITE_EMAILJS_CONFIRM_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (serviceId && confirmTemplateId && publicKey) {
+        emailjs.init(publicKey);
+
+        await emailjs.send(serviceId, confirmTemplateId, {
+          to_email: email,
+          to_name: name,
+          subject: subject,
+        });
+      }
+    } catch (err) {
+      console.warn("Confirmation email failed (non-critical):", err);
     }
 
     setLoading(false);
 
-    if (error) {
+    if (dbError) {
       toast({ title: "Error", description: "Could not send message. Try again later.", variant: "destructive" });
     } else {
       toast({ title: "Message sent!", description: "Thank you for reaching out. I'll get back to you soon." });
